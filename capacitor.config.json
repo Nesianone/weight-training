@@ -1,0 +1,6 @@
+{
+  "appId": "com.nesianone.liftwall",
+  "appName": "Lift + Wall-Sit",
+  "webDir": "www",
+  "server": { "androidScheme": "https" }
+}

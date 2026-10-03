@@ -1,5 +1,5 @@
 /* Offline cache. Bump VERSION when index.html changes so phones pick up the update. */
-var VERSION = 'lift-wall-v1';
+var VERSION = 'lift-wall-v2';
 var SHELL = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './icon-maskable-512.png'];
 
 self.addEventListener('install', function (e) {

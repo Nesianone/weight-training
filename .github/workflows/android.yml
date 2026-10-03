@@ -52,6 +52,12 @@ jobs:
           open(f"{res}/values/ic_launcher_background.xml", "w").write('<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#0B6E75</color>\n</resources>\n')
           PY
 
+      - name: Use the same signing key every build
+        run: |
+          mkdir -p ~/.android
+          cp debug.keystore ~/.android/debug.keystore
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
+
       - name: Build APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon

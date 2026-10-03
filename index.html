@@ -269,7 +269,7 @@ var START={a1:16,a2:40,a3:8,a4:4,a5:20,b1:40,b2:14,b3:20,b4:12,b5:4,b6:3,c1:60,c
 var BARBELL={a2:1,b1:1,c1:1};
 /* Weekly rhythm by phase. Day numbers follow Date.getDay(): 0 Sunday to 6 Saturday. */
 var WALLDAYS=[2,4,6];
-var LIFTDAYS={1:[],2:[3],3:[1,5],4:[1,3,5]};
+var LIFTDAYS={1:[1,5],2:[1,3,5],3:[1,3,5]};
 var DAYN=['S','M','T','W','T','F','S'];
 var DAYFULL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 var TODO=[
@@ -280,10 +280,9 @@ var TODO=[
   ['db','Find your heaviest dumbbell and enter it in Equipment']
 ];
 var PHASES={
-  1:{wk:'Weeks 1–2',name:'Wall sits only',lifts:0,txt:'Wall sits three days a week, plus the daily elbow work. About 15 minutes. It builds the habit without touching your recovery.'},
-  2:{wk:'Weeks 3–4',name:'Add one lift a week',lifts:1,txt:'Sessions A, then B. Two sets of every exercise, stopping 4 reps short of failure.'},
-  3:{wk:'Weeks 5–6',name:'Two lifts a week',lifts:2,txt:'Full sets. Sessions rotate A, B, C.'},
-  4:{wk:'Week 7 on',name:'Three lifts a week',lifts:3,txt:'A, B and C with a day between each. Add weight when you earn it.'}
+  1:{wk:'Weeks 1–2',name:'Start lifting',lifts:2,txt:'Two lifts a week (Monday and Friday) plus wall sits. Two sets of every exercise, stopping 4 reps short of failure. Learn the movements and find your starting weights.'},
+  2:{wk:'Weeks 3–4',name:'Three lifts a week',lifts:3,txt:'A, B and C on Monday, Wednesday and Friday. Still two sets of every exercise.'},
+  3:{wk:'Week 5 on',name:'Full program',lifts:3,txt:'Three sets of every exercise. Add weight when you earn it.'}
 };
 var REHAB=[
   'Isometric wrist extension: forearm on a table, palm down, light dumbbell. Lift the back of the hand to level and hold 45 seconds. 5 holds, once or twice a day.',
@@ -311,10 +310,10 @@ function syncText(){return syncMode==='account'?'Saved to your account':syncMode
 
 /* ---------- derived values ---------- */
 function weekNo(){var d=diffDays(today(),state.start);return d<0?0:Math.floor(d/7)+1}
-function phaseOf(w){return w<=2?1:w<=4?2:w<=6?3:4}
+function phaseOf(w){return w<=2?1:w<=4?2:3}
 function weekRange(){var w=weekNo();if(w<1)return null;var s=addDays(state.start,7*(w-1));return [s,addDays(s,6)]}
 function inWeek(d){var r=weekRange();return !!r&&d>=r[0]&&d<=r[1]}
-function effSets(e){return phaseOf(weekNo())===2?Math.min(e.sets,2):e.sets}
+function effSets(e){return phaseOf(weekNo())<=2?Math.min(e.sets,2):e.sets}
 function effRir(e){return e.rir==null?null:(state.sessions.length<4?e.rir+1:e.rir)}
 function lastFor(id){for(var i=state.sessions.length-1;i>=0;i--){var s=state.sessions[i];if(s.sets&&s.sets[id]&&s.sets[id].length)return {d:s.date,sets:s.sets[id]}}return null}
 function suggest(e,id){
@@ -367,7 +366,7 @@ function weekCard(ph){
   var msg=k==='lift'?'Today is a lift day. Session '+KEYS[state.sessions.length%3]+' is next.':
     k==='wall'?'Today is a wall-sit day. Keep the lifts for tomorrow or your next lift day.':
     'Today is a rest day. Walk, stretch, do the elbow work.';
-  if(state.eq&&weekNo()<1)msg='Your first week starts '+fmtDate(state.start)+'. Until then, set up Equipment in Plan.';
+  if(state.eq&&weekNo()<1)msg='Your first week starts '+fmtDate(state.start)+'. You can start Session A today if you like, and set up Equipment in Plan first.';
   return '<div class="card"><div class="wk" role="list" aria-label="This week">'+order.map(function(d){
     var kk=dayKind(d,ph);
     return '<div class="d '+kk+(d===now?' now':'')+'" role="listitem" aria-label="'+DAYFULL[d]+': '+(kk==='lift'?'lift':kk==='wall'?'wall sit':'rest')+'"><b>'+DAYN[d]+'</b><span>'+(kk==='lift'?'LIFT':kk==='wall'?'WALL':'REST')+'</span></div>'}).join('')+'</div>'+
@@ -483,8 +482,8 @@ function rackCard(){
 function planView(){
   var w=weekNo(), ph=phaseOf(w);
   var h=head()+'<div class="stack">';
-  h+='<div class="card"><h2>The ramp</h2><div>'+[1,2,3,4].map(function(i){var P=PHASES[i];return '<div class="phase-row'+(i===ph?' now':'')+'"><div class="label">'+P.wk+'</div><div><b>'+esc(P.name)+'</b><p class="small muted">'+esc(P.txt)+'</p></div></div>'}).join('')+'</div>'+
-    '<p class="small muted">You work a physical job and have tennis elbow, so the ramp is slow on purpose. A plan that is still running at Christmas beats a big one that stops in week two.</p></div>';
+  h+='<div class="card"><h2>The ramp</h2><div>'+[1,2,3].map(function(i){var P=PHASES[i];return '<div class="phase-row'+(i===ph?' now':'')+'"><div class="label">'+P.wk+'</div><div><b>'+esc(P.name)+'</b><p class="small muted">'+esc(P.txt)+'</p></div></div>'}).join('')+'</div>'+
+    '<p class="small muted">You work a physical job and have tennis elbow, so the first four weeks use two sets and stay well short of failure. A plan that is still running at Christmas beats a big one that stops in week two.</p></div>';
   h+='<div class="card"><h2>Sessions</h2>'+KEYS.map(function(k){var S=SESSIONS[k];return '<details><summary><span><b>'+k+' · '+esc(S.title)+'</b><br><span class="small muted">'+esc(S.sub)+'</span></span></summary>'+
     S.items.map(function(id){var e=EX[id];return '<div class="plan-ex"><b>'+esc(e.n)+'</b><span class="small muted">'+e.sets+' × '+(e.lo===e.hi?e.lo:e.lo+'–'+e.hi)+' '+esc(e.u)+(e.rir!=null?' · '+e.rir+' short of failure':'')+'</span></div>'}).join('')+'</details>'}).join('')+'</div>';
   h+='<div class="card"><h2>Rules</h2><ul class="rules small">'+

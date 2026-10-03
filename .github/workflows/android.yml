@@ -36,20 +36,21 @@ jobs:
           npx cap sync android
 
       - name: App icon and colours
+        continue-on-error: true
         run: |
-          RES=android/app/src/main/res
-          for pair in mdpi:48:108 hdpi:72:162 xhdpi:96:216 xxhdpi:144:324 xxxhdpi:192:432; do
-            IFS=: read d legacy fg <<< "$pair"
-            convert icon-512.png -resize ${legacy}x${legacy} $RES/mipmap-$d/ic_launcher.png
-            convert icon-512.png -resize ${legacy}x${legacy} $RES/mipmap-$d/ic_launcher_round.png
-            convert icon-maskable-512.png -resize ${fg}x${fg} $RES/mipmap-$d/ic_launcher_foreground.png
-          done
-          cat > $RES/values/ic_launcher_background.xml <<'XML'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="ic_launcher_background">#0B6E75</color>
-          </resources>
-          XML
+          pip install pillow
+          python3 - <<'PY'
+          from PIL import Image
+          res = "android/app/src/main/res"
+          sizes = {"mdpi": (48, 108), "hdpi": (72, 162), "xhdpi": (96, 216), "xxhdpi": (144, 324), "xxxhdpi": (192, 432)}
+          icon = Image.open("icon-512.png").convert("RGBA")
+          mask = Image.open("icon-maskable-512.png").convert("RGBA")
+          for d, (legacy, fg) in sizes.items():
+              icon.resize((legacy, legacy), Image.LANCZOS).save(f"{res}/mipmap-{d}/ic_launcher.png")
+              icon.resize((legacy, legacy), Image.LANCZOS).save(f"{res}/mipmap-{d}/ic_launcher_round.png")
+              mask.resize((fg, fg), Image.LANCZOS).save(f"{res}/mipmap-{d}/ic_launcher_foreground.png")
+          open(f"{res}/values/ic_launcher_background.xml", "w").write('<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#0B6E75</color>\n</resources>\n')
+          PY
 
       - name: Build APK
         working-directory: android
